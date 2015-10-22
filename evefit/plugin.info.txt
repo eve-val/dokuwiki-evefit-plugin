@@ -1,0 +1,8 @@
+base evefit
+author William Furr
+email william.furr@gmail.com
+date 2015-10-22
+name EVE Online fitting formatting
+desc This plugin adds syntax to format an EFT block
+url
+
