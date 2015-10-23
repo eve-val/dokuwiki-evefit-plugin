@@ -25,26 +25,8 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
     public function handle($match, $state, $pos, Doku_Handler $handler) {
         preg_match('/(?:\[[Ff]it\]\n*)([[:print:]\n]*?)(?:\[\/[Ff]it\])/', $match, $matches);
         $fit = $matches[1];
-        
-        $curl_handle = curl_init("https://o.smium.org/api/convert/eft/dna");
-        curl_setopt($curl_handle, CURLOPT_POST, True);
-        curl_setopt($curl_handle, CURLOPT_POSTFIELDS, 'input='.urlencode($fit));
-        curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, True);
-        curl_setopt($curl_handle, CURLOPT_ENCODING, 'gzip');
-        curl_setopt($curl_handle, CURLOPT_USERAGENT, 'DokuWikiEvefitPlugin/0.0.1 (+william.furr@gmail.com)');
-        
-        $dna = curl_exec($curl_handle);
-        curl_close($curl_handle);
-        
-        $curl_handle = curl_init("https://o.smium.org/api/json/loadout/dna/attributes/loc:ship,a:ehpAndResonances,a:damage,a:priceEstimateTotal?input=".urlencode($dna));
-        curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, True);
-        curl_setopt($curl_handle, CURLOPT_ENCODING, 'gzip');
-        curl_setopt($curl_handle, CURLOPT_USERAGENT, 'DokuWikiEvefitPlugin/0.0.1 (+william.furr@gmail.com)');
-        
-        $stats = curl_exec($curl_handle);
-        curl_close($curl_handle);
-        
-        // TODO: POST fit to o.smium.org/api/convert/eft/dna input=$fit
+        $dna = $this->_getDNAString($fit);
+        $stats = $this->_getFitStats($dna);
         return array($fit, $dna, $stats);
     }
 
@@ -55,19 +37,71 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
         // $data is what the function handle() return'ed.
         if($mode == 'xhtml') {
             list($fit, $dna, $stats) = $data;
-            $stats = json_decode($stats, True);
-            
+            $dps = $stats['damage']['total']['dps'];
+            $ehp = $stats['ehpAndResonances']['ehp']['avg'];
+            $price = $stats['priceEstimateTotal']['ship'] +
+                     $stats['priceEstimateTotal']['fitting'];
             $renderer->doc .= "<p><a href=\"https://o.smium.org/loadout/dna/";
             $renderer->doc .= $dna."\">Osmium</a> - ";
-            $renderer->doc .= $stats['ship']['damage']['total']['dps']." DPS - ";
-            $renderer->doc .= $stats['ship']['ehpAndResonances']['ehp']['avg']." EHP - ";
-            $renderer->doc .= ($stats['ship']['priceEstimateTotal']['ship'] + $stats['ship']['priceEstimateTotal']['fitting'])." ISK";
+            $renderer->doc .= $this->_abbreviateNumber($dps)." DPS - ";
+            $renderer->doc .= $this->_abbreviateNumber($ehp)." EHP - ";
+            $renderer->doc .= $this->_abbreviateNumber($price)." ISK";
             $renderer->doc .= "</p><pre>";
             $renderer->doc .= $renderer->_xmlEntities($fit); 
             $renderer->doc .= "</pre>";
             return true;
         }
         return false;
+    }
+    
+    // Given a fit in EFT format, queries Osmium for the DNA equivalent.
+    private function _getDNAString($fit) {
+        $curl_handle = $this->_initCurl("https://o.smium.org/api/convert/eft/dna");
+        curl_setopt($curl_handle, CURLOPT_POST, True);
+        curl_setopt($curl_handle, CURLOPT_POSTFIELDS, 'input='.urlencode($fit));
+        $dna = curl_exec($curl_handle);
+        curl_close($curl_handle);
+        return $dna;
+    }
+    
+    // Given a fit in DNA format, queries Osmium for fit stats.
+    private function _getFitStats($dna) {
+        $requestedStats = "a:ehpAndResonances,a:damage,a:priceEstimateTotal";
+        $curl_handle = $this->_initCurl("https://o.smium.org/api/json/loadout/dna/attributes/loc:ship,".$requestedStats."?input=".urlencode($dna));
+        $stats = curl_exec($curl_handle);
+        curl_close($curl_handle);
+        return json_decode($stats, True)['ship'];
+    }
+    
+    // Makes a cURL handle with the right user agent and accept-encoding.
+    private function _initCurl($url) {
+        $curl_handle = curl_init($url);
+        curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, True);
+        curl_setopt($curl_handle, CURLOPT_ENCODING, 'gzip');
+        curl_setopt($curl_handle, CURLOPT_USERAGENT, 'DokuWikiEvefitPlugin/0.0.1 (+william.furr@gmail.com)');
+        return $curl_handle;
+    }
+    
+    // Given a number, returns the closest appropriate abbreviation.
+    private function _abbreviateNumber($num) {      
+          if ($num >= 1000000000) {
+              $num = $num / 1000000000;
+              $suffix = 'B';
+          } else if ($num >= 1000000) {
+              $num = $num / 1000000;
+              $suffix = 'M';
+          } else if ($num >= 1000) {
+              $num = $num / 1000;
+              $suffix = 'K';
+          }
+          if ($num > 99) {
+              $ndecimals = 0;
+          } else if ($num > 9) {
+              $ndecimals = 1;
+          } else {
+              $ndecimals = 2;
+          }
+          return sprintf("%.".$ndecimals."f".$suffix, $num);
     }
 }
 
