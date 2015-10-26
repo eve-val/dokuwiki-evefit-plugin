@@ -1,0 +1,22 @@
+.evefit-summary {
+    border: 1px solid __border__;
+    padding: 3px 7px;
+}
+
+.evefit-body {
+    border: 1px solid __border__;
+    padding: 3px 7px;
+    white-space: pre;
+    font-family: monospace;
+}
+
+.evefit-button {
+    background: __text__;
+    color: __background__;
+    cursor: pointer;
+    padding: 1px 5px;
+}
+
+.evefit-button:before {
+    content: '+';
+}

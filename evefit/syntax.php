@@ -16,6 +16,7 @@ if(!defined('DOKU_INC')) die();
 class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
 
     public function getType(){ return 'protected'; }
+    public function getPType(){ return 'block'; }
     public function getSort(){ return 158; }
     public function connectTo($mode) { $this->Lexer->addSpecialPattern('\[[Ff]it\].*?\[/[Ff]it\]',$mode,'plugin_evefit'); }
 
@@ -37,18 +38,31 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
         // $data is what the function handle() return'ed.
         if($mode == 'xhtml') {
             list($fit, $dna, $stats) = $data;
-            $dps = $stats['damage']['total']['dps'];
-            $ehp = $stats['ehpAndResonances']['ehp']['avg'];
-            $price = $stats['priceEstimateTotal']['ship'] +
-                     $stats['priceEstimateTotal']['fitting'];
-            $renderer->doc .= "<p><a href=\"https://o.smium.org/loadout/dna/";
-            $renderer->doc .= $dna."\">Osmium</a> - ";
-            $renderer->doc .= $this->_abbreviateNumber($dps)." DPS - ";
-            $renderer->doc .= $this->_abbreviateNumber($ehp)." EHP - ";
-            $renderer->doc .= $this->_abbreviateNumber($price)." ISK";
-            $renderer->doc .= "</p><pre>";
-            $renderer->doc .= $renderer->_xmlEntities($fit); 
-            $renderer->doc .= "</pre>";
+            $dps = $this->_abbreviateNumber($stats['damage']['total']['dps']);
+            $ehp = $this->_abbreviateNumber(
+                $stats['ehpAndResonances']['ehp']['avg']);
+            $osmiumUrl = $this->external_link(
+                "https://o.smium.org/loadout/dna/".$dna,
+                "Osmium");
+            $price = $this->_abbreviateNumber(
+                        $stats['priceEstimateTotal']['ship'] +
+                        $stats['priceEstimateTotal']['fitting']);
+            $fitTitle = "TODO: extract title";
+            $fitBody = $renderer->_xmlEntities($fit);
+            
+            $renderer->doc .= <<<EVEFIT
+<div class="evefit-block">
+  <div class="evefit-summary">
+    <span class="evefit-button" 
+          onclick="jQuery('.evefit-body').toggle();"></span>
+    $fitTitle - $dps DPS - $ehp EHP - $price ISK - $osmiumUrl
+  </div>
+  <div class="evefit-body" style="display: none;">
+$fitBody
+  </div>
+</div>
+EVEFIT;
+
             return true;
         }
         return false;
