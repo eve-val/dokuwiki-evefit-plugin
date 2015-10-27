@@ -28,7 +28,9 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
         $fit = $matches[1];
         $dna = $this->_getDNAString($fit);
         $stats = $this->_getFitStats($dna);
-        return array($fit, $dna, $stats);
+        preg_match('/(\[[[:print:]]+\])/', $fit, $matches);
+        $title = $matches[1];
+        return array($fit, $dna, $stats, $title);
     }
 
     /**
@@ -37,7 +39,7 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
     public function render($mode, Doku_Renderer $renderer, $data) {
         // $data is what the function handle() return'ed.
         if($mode == 'xhtml') {
-            list($fit, $dna, $stats) = $data;
+            list($fit, $dna, $stats, $title) = $data;
             $id = rand();
             $dps = $this->_abbreviateNumber($stats['damage']['total']['dps']);
             $ehp = $this->_abbreviateNumber(
@@ -56,7 +58,7 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
   <div class="evefit-summary">
     <span class="evefit-button" 
           onclick="jQuery('#evefit-$id').toggle();"></span>
-    $fitTitle - $dps DPS - $ehp EHP - $price ISK - $osmiumUrl
+    $title - $dps DPS - $ehp EHP - $price ISK - $osmiumUrl
   </div>
   <div class="evefit-body" id="evefit-$id" style="display: none;">
 $fitBody
