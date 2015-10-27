@@ -38,6 +38,7 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
         // $data is what the function handle() return'ed.
         if($mode == 'xhtml') {
             list($fit, $dna, $stats) = $data;
+            $id = rand();
             $dps = $this->_abbreviateNumber($stats['damage']['total']['dps']);
             $ehp = $this->_abbreviateNumber(
                 $stats['ehpAndResonances']['ehp']['avg']);
@@ -54,10 +55,10 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
 <div class="evefit-block">
   <div class="evefit-summary">
     <span class="evefit-button" 
-          onclick="jQuery('.evefit-body').toggle();"></span>
+          onclick="jQuery('#evefit-$id').toggle();"></span>
     $fitTitle - $dps DPS - $ehp EHP - $price ISK - $osmiumUrl
   </div>
-  <div class="evefit-body" style="display: none;">
+  <div class="evefit-body" id="evefit-$id" style="display: none;">
 $fitBody
   </div>
 </div>
