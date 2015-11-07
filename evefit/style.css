@@ -10,7 +10,6 @@
 .evefit-body {
     border: 1px solid __border__;
     padding: 3px 7px;
-    white-space: pre;
     font-family: monospace;
 }
 
