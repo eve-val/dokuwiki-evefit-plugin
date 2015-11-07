@@ -51,7 +51,10 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
                         $stats['priceEstimateTotal']['ship'] +
                         $stats['priceEstimateTotal']['fitting']);
             $fitTitle = "TODO: extract title";
-            $fitBody = $renderer->_xmlEntities($fit);
+            $fitBody = "";
+            foreach(preg_split("/((\r?\n)|(\r\n?))/", $fit) as $line) {
+               $fitBody .= $renderer->_xmlEntities($line) . "<br/>";
+            }
             
             $renderer->doc .= <<<EVEFIT
 <div class="evefit-block">
