@@ -41,16 +41,19 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
         if($mode == 'xhtml') {
             list($fit, $dna, $stats, $title) = $data;
             $id = rand();
-            $dps = $this->_abbreviateNumber($stats['damage']['total']['dps']);
-            $ehp = $this->_abbreviateNumber(
-                $stats['ehpAndResonances']['ehp']['avg']);
-            $osmiumUrl = $this->external_link(
+            $osmiumUrl = $dna === FALSE ? "" : $this->external_link(
                 "https://o.smium.org/loadout/dna/".$dna,
                 "Osmium");
-            $price = $this->_abbreviateNumber(
-                        $stats['priceEstimateTotal']['ship'] +
-                        $stats['priceEstimateTotal']['fitting']);
-            $fitTitle = "TODO: extract title";
+            if ($stats === FALSE) {
+                $dps = ""; $ehp = ""; $price = "";
+            } else {
+                $dps = $this->_abbreviateNumber($stats['damage']['total']['dps']);
+                $ehp = $this->_abbreviateNumber(
+                    $stats['ehpAndResonances']['ehp']['avg']);
+                $price = $this->_abbreviateNumber(
+                            $stats['priceEstimateTotal']['ship'] +
+                            $stats['priceEstimateTotal']['fitting']);
+            }
             $fitBody = nl2br($renderer->_xmlEntities($fit));
             
             $renderer->doc .= <<<EVEFIT
@@ -76,6 +79,7 @@ EVEFIT;
         $curl_handle = $this->_initCurl("https://o.smium.org/api/convert/eft/dna");
         curl_setopt($curl_handle, CURLOPT_POST, True);
         curl_setopt($curl_handle, CURLOPT_POSTFIELDS, 'input='.urlencode($fit));
+        curl_setopt($curl_handle, CURLOPT_TIMEOUT, 60);
         $dna = curl_exec($curl_handle);
         curl_close($curl_handle);
         return $dna;
@@ -83,11 +87,13 @@ EVEFIT;
     
     // Given a fit in DNA format, queries Osmium for fit stats.
     private function _getFitStats($dna) {
+        if ($dna === FALSE) return FALSE;
         $requestedStats = "a:ehpAndResonances,a:damage,a:priceEstimateTotal";
         $curl_handle = $this->_initCurl("https://o.smium.org/api/json/loadout/dna/attributes/loc:ship,".$requestedStats."?input=".urlencode($dna));
+        curl_setopt($curl_handle, CURLOPT_TIMEOUT, 60);
         $stats = curl_exec($curl_handle);
         curl_close($curl_handle);
-        return json_decode($stats, True)['ship'];
+        return $stats === FALSE ? FALSE : json_decode($stats, True)['ship'];
     }
     
     // Makes a cURL handle with the right user agent and accept-encoding.
