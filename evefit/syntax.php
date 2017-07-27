@@ -45,8 +45,10 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
   <div class="evefit-summary">
     <span class="evefit-expand" data-evefit-id="$id"></span>
     $title
-    <span class="evefit-copy"
-          data-clipboard-target="#evefit-$id">Copy to clipboard</span>
+    <button class="evefit-copy" data-clipboard-target="#evefit-$id">
+      <div class="evefit-copy-icon"></div>
+      Copy to clipboard
+    </button>
   </div>
   <div class="evefit-body" id="evefit-$id" style="display: none;">
 $fitBody
