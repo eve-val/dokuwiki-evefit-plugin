@@ -6,7 +6,7 @@ jQuery().ready(() => {
   // element's data-clipboard-target attribute, which is the
   // evefit-body.
   const clip = new Clipboard(`.evefit-copy`, {
-    text: elem => jQuery(elem.dataset.clipboardTarget).text()
+    text: elem => jQuery(elem.dataset.clipboardTarget).text().replace(/^\s+|\s+$/g, '');
   });
 
   // Add expand/collapse handler to each evefit-expand element.
