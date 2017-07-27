@@ -26,8 +26,6 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
     public function handle($match, $state, $pos, Doku_Handler $handler) {
         preg_match('/(?:\[[Ff]it\]\n*)([[:print:]\n]*?)(?:\[\/[Ff]it\])/', $match, $matches);
         $fit = $matches[1];
-        $dna = $this->_getDNAString($fit);
-        $stats = $this->_getFitStats($dna);
         preg_match('/(\[[[:print:]]+\])/', $fit, $matches);
         $title = $matches[1];
         return array($fit, $dna, $stats, $title);
@@ -41,27 +39,16 @@ class syntax_plugin_evefit extends DokuWiki_Syntax_Plugin {
         if($mode == 'xhtml') {
             list($fit, $dna, $stats, $title) = $data;
             $id = rand();
-            $osmiumUrl = $dna === FALSE ? "" : $this->external_link(
-                "https://o.smium.org/loadout/dna/".$dna,
-                "Osmium");
-            if ($stats === FALSE) {
-                $dps = ""; $ehp = ""; $price = "";
-            } else {
-                $dps = $this->_abbreviateNumber($stats['damage']['total']['dps']);
-                $ehp = $this->_abbreviateNumber(
-                    $stats['ehpAndResonances']['ehp']['avg']);
-                $price = $this->_abbreviateNumber(
-                            $stats['priceEstimateTotal']['ship'] +
-                            $stats['priceEstimateTotal']['fitting']);
-            }
             $fitBody = nl2br($renderer->_xmlEntities($fit));
-            
             $renderer->doc .= <<<EVEFIT
 <div class="evefit-block">
   <div class="evefit-summary">
-    <span class="evefit-button" 
-          onclick="jQuery('#evefit-$id').toggle();"></span>
-    $title - $dps DPS - $ehp EHP - $price ISK - $osmiumUrl
+    <span class="evefit-expand" data-evefit-id="$id"></span>
+    $title
+    <button class="evefit-copy" data-clipboard-target="#evefit-$id">
+      <div class="evefit-copy-icon"></div>
+      Copy to clipboard
+    </button>
   </div>
   <div class="evefit-body" id="evefit-$id" style="display: none;">
 $fitBody
@@ -73,59 +60,5 @@ EVEFIT;
         }
         return false;
     }
-    
-    // Given a fit in EFT format, queries Osmium for the DNA equivalent.
-    private function _getDNAString($fit) {
-        $curl_handle = $this->_initCurl("https://o.smium.org/api/convert/eft/dna");
-        curl_setopt($curl_handle, CURLOPT_POST, True);
-        curl_setopt($curl_handle, CURLOPT_POSTFIELDS, 'input='.urlencode($fit));
-        curl_setopt($curl_handle, CURLOPT_TIMEOUT, 60);
-        $dna = curl_exec($curl_handle);
-        curl_close($curl_handle);
-        return $dna;
-    }
-    
-    // Given a fit in DNA format, queries Osmium for fit stats.
-    private function _getFitStats($dna) {
-        if ($dna === FALSE) return FALSE;
-        $requestedStats = "a:ehpAndResonances,a:damage,a:priceEstimateTotal";
-        $curl_handle = $this->_initCurl("https://o.smium.org/api/json/loadout/dna/attributes/loc:ship,".$requestedStats."?input=".urlencode($dna));
-        curl_setopt($curl_handle, CURLOPT_TIMEOUT, 60);
-        $stats = curl_exec($curl_handle);
-        curl_close($curl_handle);
-        return $stats === FALSE ? FALSE : json_decode($stats, True)['ship'];
-    }
-    
-    // Makes a cURL handle with the right user agent and accept-encoding.
-    private function _initCurl($url) {
-        $curl_handle = curl_init($url);
-        curl_setopt($curl_handle, CURLOPT_RETURNTRANSFER, True);
-        curl_setopt($curl_handle, CURLOPT_ENCODING, 'gzip');
-        curl_setopt($curl_handle, CURLOPT_USERAGENT, 'DokuWikiEvefitPlugin/0.0.1 (+william.furr@gmail.com)');
-        return $curl_handle;
-    }
-    
-    // Given a number, returns the closest appropriate abbreviation.
-    private function _abbreviateNumber($num) {      
-          if ($num >= 1000000000) {
-              $num = $num / 1000000000;
-              $suffix = 'B';
-          } else if ($num >= 1000000) {
-              $num = $num / 1000000;
-              $suffix = 'M';
-          } else if ($num >= 1000) {
-              $num = $num / 1000;
-              $suffix = 'K';
-          }
-          if ($num > 99) {
-              $ndecimals = 0;
-          } else if ($num > 9) {
-              $ndecimals = 1;
-          } else {
-              $ndecimals = 2;
-          }
-          return sprintf("%.".$ndecimals."f".$suffix, $num);
-    }
 }
-
 ?>
