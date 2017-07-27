@@ -2,7 +2,7 @@
 EVE Fitting formatting plugin for DokuWiki
 
 ## Usage
-Adds wiki syntax for [EVE Online][1] ship fittings.  An [EFT-formatted][2] fit between  `[Fit][/Fit]` tags will be rendered as a summary line with attributes and an [o.smium.org][3] link followed by an expandable listing of the fit:
+Adds wiki syntax for [EVE Online][1] ship fittings.  An [EFT-formatted][2] fit between  `[Fit][/Fit]` tags will be rendered as a summary line with the title and a copy to clipboard button followed by an expandable listing of the fit:
 
 ```
 [Fit]
@@ -42,12 +42,11 @@ Copy the plugin to your `dokuwiki/lib/plugins` directory.
 ## Development
 
 * Install PHP with libcurl and libjson
-* Download [dokuwiki][4] and symlink the `evefit` directory to the `lib/plugins` directory
+* Download [dokuwiki][3] and symlink the `evefit` directory to the `lib/plugins` directory
 * `php -S localhost:1234` in the dokuwiki root directory
 * Submit pull request
 
 
 [1]: http://www.eveonline.com/
 [2]: https://forums.eveonline.com/default.aspx?g=posts&t=24359&find=unread
-[3]: https://o.smium.org/
-[4]: http://dokuwiki.org/
+[3]: http://dokuwiki.org/
